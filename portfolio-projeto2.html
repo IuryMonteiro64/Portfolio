@@ -171,11 +171,94 @@
               <p>
                 O resultado é um dashboard interativo que permite visualizar, em tempo real, quais canais trazem maior retorno, como as taxas de conversão evoluem ao longo do tempo, quais campanhas são mais eficazes e onde os investimentos têm maior impacto.
               </p>
-              <div class="testimonial-item"> FUNDO CINZA
+              <div class="testimonial-item">
                 <h3>Script Python para extração:</h3>
-                <p>
-                  
-                </p>
+                <div class="python-code">
+                  <div class="code-header">
+                    <span>script_etl.py</span>
+                    <button class="copy-btn" onclick="copyCode()">Copiar código</button>
+                  </div>
+                  <pre><code># ESTA VERSÃO BAIXA OS DADOS EM CSV E REALIZA AS ALTERAÇÕES
+import requests
+import pandas as pd
+import zipfile
+import io
+import numpy as np
+import os
+
+# Configurações (requer token da API)
+KAGGLE_USERNAME = "iurymonteiro"
+KAGGLE_KEY = "42b7cc10904078f571b43ae066ff041f"
+
+dataset_ref = "rabieelkharoua/predict-conversion-in-digital-marketing-dataset"
+url = f"https://www.kaggle.com/api/v1/datasets/download/{dataset_ref}"
+
+# Fazer request autenticado
+response = requests.get(url, auth=(KAGGLE_USERNAME, KAGGLE_KEY))
+
+if response.status_code == 200:
+    # Processar zipfile na memória
+    with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+        file_list = z.namelist()
+        
+        for file_name in file_list:
+            if file_name.endswith(('.xlsx', '.xls', '.csv')):
+                
+                # Transformando em DataFrame
+                with z.open(file_name) as file:
+                    if file_name.endswith(('.xlsx', '.xls')):
+                        df = pd.read_excel(file)
+                    else:
+                        df = pd.read_csv(file)
+                    
+                    # Removendo colunas 
+                    colunas_para_remover = ["AdvertisingPlatform", "AdvertisingTool"]
+                    df = df.drop(columns=colunas_para_remover, errors="ignore")
+
+                    # Arredondando valores de colunas numéricas específicas
+                    colunas_arredondadas = ["AdSpend", "ClickThroughRate", "ConversionRate", "PagesPerVisit", "TimeOnSite"]
+                    for coluna in colunas_arredondadas:
+                        if coluna in df.columns:
+                            df[coluna] = df[coluna].round(2)
+                    
+                    break
+    
+    # Adicionando coluna de data aleatória
+    data_inicio = '2020-01-01'
+    data_fim = '2025-08-31'
+    
+    inicio = pd.to_datetime(data_inicio)
+    fim = pd.to_datetime(data_fim)
+    delta = (fim - inicio).days
+    
+    dias_aleatorios = pd.to_timedelta(np.random.randint(0, delta + 1, size=len(df)), unit='D')
+    df['Data'] = inicio + dias_aleatorios
+    
+    # Ordenando por data
+    df = df.sort_values('Data').reset_index(drop=True)
+    
+    # SALVAR CSV
+    caminho_saida = r"C:\Users\Iury Monteiro\OneDrive\Área de Trabalho\Dashboards\Projeto 2 - Dashboard Marketing\marketing_campaign_clean.csv"
+    
+    # Criar a pasta se não existir
+    os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
+    
+    # Salvar CSV formatado para PT-BR
+    df.to_csv(
+        caminho_saida,
+        index=False,
+        sep=";",         # separador de colunas
+        decimal=",",     # vírgula como separador decimal
+        encoding="utf-8-sig"  # evita problemas de acentuação
+    )
+
+    print("CSV salvo com sucesso!")
+    print("Caminho:", caminho_saida)
+    print(df.head())
+
+else:
+    print("Erro na API:", response.status_code)</code></pre>
+                </div>
                 <div>
                   <img src="assets/img/testimonials/testimonials-2.jpg" class="testimonial-img" alt="">
                 </div>
